@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     Dimensions
 } from 'react-native';
+import debounce from 'lodash.debounce'
 
 const reactNativePackage = require('react-native/package.json');
 const splitVersion = reactNativePackage.version.split('.');
@@ -54,6 +55,9 @@ export default class ImageSlider extends Component {
             width: Dimensions.get('window').width,
             scrolling: false,
         };
+
+        this._handleScroll = this._handleScroll.bind(this)
+        this._handleScrollEnd = debounce(this._handleScrollEnd.bind(this), 100).bind(this)
     }
 
     _onRef(ref) {
@@ -82,6 +86,18 @@ export default class ImageSlider extends Component {
             return this.props.position;
         }
         return this.state.position;
+    }
+
+    _handleScroll(event) {
+        this._handleScrollEnd(event.nativeEvent.contentOffset)
+    }
+
+    _handleScrollEnd(contentOffset) {
+        const width = this.props.width || this.state.width
+
+        const index = Math.round(contentOffset.x / width)
+
+        this._move(index)
     }
 
     componentDidUpdate(prevProps) {
@@ -140,6 +156,8 @@ export default class ImageSlider extends Component {
                 decelerationRate={0.99}
                 horizontal={true}
                 showsHorizontalScrollIndicator={false}
+                onScroll={this._handleScroll}
+                scrollEventThrottle={16}
                 {...this._panResponder.panHandlers}
                 style={[styles.container, this.props.style, {height: height}]}>
                 {this.props.images.map((image, index) => {
